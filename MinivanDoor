@@ -1,0 +1,310 @@
+package edu.vt.cs5044;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * This is my Mini Van Door Class. The purpose of this is to represent the processes of a Van door.
+ * By supplying TDDs, this class will operate a vanDoor object.
+ * 
+ * @author mjohn
+ * @version Sep 22, 2018
+ */
+public class MinivanDoor
+{
+    private Gear                 gear;
+    private boolean              open;
+    private boolean              locked;
+    private boolean              childSafe;
+    private boolean              unlocked;
+    private final List<LogEntry> eventLog;
+
+
+    /**
+     * This is the MinivanDoor constructor.
+     */
+    public MinivanDoor()
+    {
+        gear = Gear.PARK;
+        open = false;
+        locked = false;
+        unlocked = true;
+        childSafe = false;
+        eventLog = new ArrayList<LogEntry>();
+    }
+
+
+    /**
+     * This is the open method.
+     * 
+     * @return open the door
+     */
+    public boolean isOpen()
+    {
+        return open;
+    }
+
+
+    /**
+     * This is the lock method.
+     * 
+     * @return lock the door
+     */
+    public boolean isLocked()
+    {
+        return locked;
+    }
+
+
+    /**
+     * This is the child safety method.
+     * 
+     * @return child safe the door
+     */
+    public boolean isChildSafe()
+    {
+        return childSafe;
+    }
+
+
+    /**
+     * This is the get gear method. It calls on the Gear enum.
+     * 
+     * @return the enum gear.
+     */
+    public Gear getGear()
+    {
+        return gear;
+    }
+
+
+    /**
+     * This is the last log entry method.
+     * 
+     * @return the last log entry.
+     */
+    public LogEntry getLastLogEntry()
+    {
+        return getLogEntryAt(getLogEntryCount() - 1);
+    }
+
+
+    /**
+     * This is the log entry count method.
+     * 
+     * @return the log entry count
+     */
+    public int getLogEntryCount()
+    {
+        return eventLog.size();
+    }
+
+
+    /**
+     * This is the log entry at index method.
+     * 
+     * @param index
+     *            the desired index value.
+     * @return the desired log entry from its index.
+     */
+    public LogEntry getLogEntryAt(int index)
+    {
+        if (eventLog.size() <= 0)
+        {
+            return null;
+        }
+        return eventLog.get(index);
+    }
+
+
+    /**
+     * This is the set gear method.
+     * 
+     * @param newGear
+     *            the desired new gear Update the event log.
+     */
+    public void setGear(Gear newGear)
+    {
+
+        if (newGear != Gear.PARK && gear != Gear.PARK)
+        {
+            eventLog.add(LogEntry.NO_ACTION_TAKEN);
+        }
+        else if (newGear == Gear.PARK && gear == newGear)
+        {
+            eventLog.add(LogEntry.NO_ACTION_TAKEN);
+        }
+        else if (newGear != gear && newGear != Gear.PARK)
+        {
+            eventLog.add(LogEntry.GEAR_RELEASED);
+        }
+        else
+        {
+            eventLog.add(LogEntry.GEAR_PARKED);
+        }
+        gear = newGear;
+    }
+
+
+    /**
+     * This is the set child safety method.
+     * 
+     * @param engage
+     *            the desired child safety Update the child safety log.
+     */
+    public void setChildSafe(boolean engage)
+    {
+        if (childSafe && engage)
+        {
+            eventLog.add(LogEntry.NO_ACTION_TAKEN);
+            childSafe = true;
+        }
+
+        else if (!childSafe && !engage)
+        {
+            eventLog.add(LogEntry.NO_ACTION_TAKEN);
+            childSafe = false;
+        }
+        else if (open && !engage)
+        {
+            eventLog.add(LogEntry.CHILD_SAFE_DISENGAGED);
+            childSafe = false;
+        }
+        else if (open && engage)
+        {
+            eventLog.add(LogEntry.CHILD_SAFE_ENGAGED);
+            childSafe = true;
+        }
+        else
+        {
+            eventLog.add(LogEntry.CHILD_SAFE_CHANGE_REFUSED);
+            childSafe = false;
+        }
+
+    }
+
+
+    /**
+     * This is the push lock button method. Engage the lock and update the event log.
+     */
+    public void pushLockButton()
+    {
+        if (locked)
+        {
+            eventLog.add(LogEntry.NO_ACTION_TAKEN);
+        }
+        else
+        {
+            eventLog.add(LogEntry.DOOR_LOCKED);
+            unlocked = false;
+        }
+        locked = true;
+
+    }
+
+
+    /**
+     * This is the push unlock button method. Unlock the door and update the event log.
+     */
+    public void pushUnlockButton()
+    {
+        if (unlocked)
+        {
+            eventLog.add(LogEntry.NO_ACTION_TAKEN);
+        }
+        else
+        {
+            eventLog.add(LogEntry.DOOR_UNLOCKED);
+            locked = false;
+        }
+        unlocked = true;
+    }
+
+
+    /**
+     * This is the push open button method. Open the door and update the event log.
+     */
+    public void pushOpenButton()
+    {
+        processBasicOpen();
+    }
+
+
+    /**
+     * This is the pull inside handle method. Open the door from the inside and update the event
+     * log.
+     */
+    public void pullInsideHandle()
+    {
+        if (childSafe)
+        {
+            open = false;
+            eventLog.add(LogEntry.OPEN_REFUSED_CHILD_SAFE);
+        }
+        else
+            processBasicOpen();
+
+    }
+
+
+    /**
+     * This is the pull outside handle method. Open the door from the outside and update the event
+     * log.
+     */
+    public void pullOutsideHandle()
+    {
+        processBasicOpen();
+    }
+
+
+    /**
+     * This is the close door method. Close the door and update the event log.
+     */
+    public void closeDoor()
+    {
+        if (open)
+        {
+            eventLog.add(LogEntry.DOOR_CLOSED);
+            open = false;
+        }
+        else
+        {
+            eventLog.add(LogEntry.NO_ACTION_TAKEN);
+        }
+
+    }
+
+
+    /**
+     * This is the helper method for all three door open methods. Process opening the door and
+     * update the event log.
+     */
+    private void processBasicOpen()
+    {
+        if (open)
+        {
+            eventLog.add(LogEntry.NO_ACTION_TAKEN);
+            open = true;
+
+        }
+        else if (locked)
+        {
+            eventLog.add(LogEntry.OPEN_REFUSED_LOCK);
+            open = false;
+
+        }
+        else if (gear != Gear.PARK)
+        {
+            eventLog.add(LogEntry.OPEN_REFUSED_GEAR);
+            open = false;
+
+        }
+        else
+        {
+            eventLog.add(LogEntry.DOOR_OPENED);
+            open = true;
+        }
+
+    }
+
+}
