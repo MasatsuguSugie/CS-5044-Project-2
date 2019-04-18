@@ -1,0 +1,692 @@
+package edu.vt.cs5044;
+
+import static org.junit.Assert.*;
+import edu.vt.cs5044.MinivanDoor;
+import org.junit.Before;
+import org.junit.Test;
+
+// CHECKSTYLE:OFF
+/**
+ * A starter JUnit test class for the MinivanDoor. NOTE: Javadocs are NOT required in this file.
+ * Comments are provided here to help document the example test cases. Please be sure name all of
+ * your test methods very clearly, and use in-line comments as necessary. NOTE: Web-CAT will
+ * completely ignore style rules on this file. Leave the below "@SuppressWarnings" annotation
+ * intact, to avoid Eclipse warnings about Javadocs, and keep the CHECKSTYLE:OFF comment above.
+ */
+@SuppressWarnings("javadoc")
+public class MinivanDoorTest
+{
+
+    private MinivanDoor vanDoor;
+
+
+    /*
+     * Called by JUnit each time it calls any test method. Note the "@Before" annotation,
+     * immediately above the method signature. You'll need to use the "@Test" annotation for all
+     * your test methods. We'll use this to simply create a new default instance of MinivanDoor.
+     */
+    @Before
+    public void setUp()
+    {
+        vanDoor = new MinivanDoor();
+        // add mutators
+    }
+
+
+    /*
+     * Tests all the initial values of the constructor. This also requires most accessor methods to
+     * be implemented properly. Don't forget the "@Test" annotation.
+     */
+    @Test
+    public void testConstructorDefaults()
+    {
+        // Default setup
+
+        assertFalse(vanDoor.isLocked());
+        assertFalse(vanDoor.isOpen());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(Gear.PARK, vanDoor.getGear());
+        assertEquals(0, vanDoor.getLogEntryCount());
+        assertNull(vanDoor.getLastLogEntry());
+    }
+
+
+    /*
+     * Test activation of the lock button with default setup. We expect the door to lock
+     * successfully, with an event log entry that reflects this. Don't forget the "@Test"
+     * annotation.
+     */
+    @Test
+    public void testLockDoorWithDefaults()
+    {
+        // Default setup
+
+        vanDoor.pushLockButton(); // ACTION
+
+        assertTrue(vanDoor.isLocked());
+        assertEquals(LogEntry.DOOR_LOCKED, vanDoor.getLastLogEntry());
+    }
+
+
+    /*
+     * Test opening the door with the open button, after locking the door. We expect the door to
+     * remain closed and locked in this case, with an event log entry that reflects this. Note how
+     * we use another test case as the setup here, so we can be sure that the setup itself actually
+     * worked as expected before continuing. Don't forget the "@Test" annotation.
+     */
+    @Test
+    public void testOpenButtonAfterLockedWithDefaults()
+    {
+        testLockDoorWithDefaults();
+
+        vanDoor.pushOpenButton(); // ACTION
+
+        assertTrue(vanDoor.isLocked());
+        assertFalse(vanDoor.isOpen());
+        assertEquals(LogEntry.OPEN_REFUSED_LOCK, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testOpenButtonAfterDefaults()
+    {
+        // Default setup
+
+        vanDoor.pushOpenButton(); // ACTION
+
+        assertFalse(vanDoor.isLocked());
+        assertTrue(vanDoor.isOpen());
+        assertEquals(1, vanDoor.getLogEntryCount());
+        assertEquals(LogEntry.DOOR_OPENED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testLockWhileDoorOpen()
+    {
+        testOpenButtonAfterDefaults();
+
+        vanDoor.pushLockButton(); // ACTION
+
+        assertTrue(vanDoor.isLocked());
+        assertTrue(vanDoor.isOpen());
+        assertEquals(LogEntry.DOOR_LOCKED, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testUnlockWhileDoorOpenAfterLock()
+    {
+        testLockWhileDoorOpen();
+
+        vanDoor.pushUnlockButton(); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertEquals(LogEntry.DOOR_UNLOCKED, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testUnLockDoorAfterLock()
+    {
+        testLockDoorWithDefaults();
+
+        vanDoor.pushUnlockButton(); // ACTION
+
+        assertFalse(vanDoor.isChildSafe());
+        assertFalse(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertEquals(LogEntry.DOOR_UNLOCKED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testUnLockDoorWithDefaults()
+    {
+        // Default setup
+
+        vanDoor.pushUnlockButton(); // ACTION
+
+        assertFalse(vanDoor.isChildSafe());
+        assertFalse(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testUnLockDoorAfterUnlockDoor()
+    {
+        testUnLockDoorWithDefaults();
+
+        vanDoor.pushUnlockButton(); // ACTION
+
+        assertFalse(vanDoor.isChildSafe());
+        assertFalse(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testOpenButtonAfterUnlockButton()
+    {
+        testUnLockDoorWithDefaults();
+
+        vanDoor.pushOpenButton(); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertEquals(LogEntry.DOOR_OPENED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testChildSafeAfterLockButton()
+    {
+        testLockDoorWithDefaults();
+
+        vanDoor.setChildSafe(true); // ACTION
+
+        assertFalse(vanDoor.isOpen());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.CHILD_SAFE_CHANGE_REFUSED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testChildSafeAfterSetChildSafeWithLock()
+    {
+        testChildSafeAfterLockButton(); // ACTION
+
+        vanDoor.setChildSafe(true);
+        assertFalse(vanDoor.isChildSafe());
+        assertTrue(vanDoor.isLocked());
+        assertEquals(LogEntry.CHILD_SAFE_CHANGE_REFUSED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testLockDoorAfterLockDoor()
+    {
+        testLockDoorWithDefaults();
+
+        vanDoor.pushLockButton(); // ACTION
+
+        assertTrue(vanDoor.isLocked());
+        assertFalse(vanDoor.isOpen());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testPullInsideHandleAfterLockButton()
+    {
+        testChildSafeAfterLockButton();
+
+        vanDoor.pullInsideHandle(); // ACTION
+
+        assertTrue(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertFalse(vanDoor.isOpen());
+        assertEquals(LogEntry.OPEN_REFUSED_LOCK, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testPullInsideHandleAfterChildSafe()
+    {
+        testChildSafeAfterLockButton();
+
+        vanDoor.pullInsideHandle(); // ACTION
+
+        assertTrue(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertFalse(vanDoor.isOpen());
+        assertEquals(LogEntry.OPEN_REFUSED_LOCK, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testPullInsideHandleAfterUnlockDoor()
+    {
+        testUnLockDoorWithDefaults();
+
+        vanDoor.pullInsideHandle(); // ACTION
+
+        assertFalse(vanDoor.isChildSafe());
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertEquals(LogEntry.DOOR_OPENED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testPullOutsideHandleAfterPullInsideHandle()
+    {
+        testPullInsideHandleAfterUnlockDoor();
+
+        vanDoor.pullOutsideHandle(); // ACTION
+
+        assertFalse(vanDoor.isChildSafe());
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testGearNeutralAfterDefaults()
+    {
+        // Default setup
+
+        vanDoor.setGear(Gear.NEUTRAL); // ACTION
+
+        assertEquals(Gear.NEUTRAL, vanDoor.getGear());
+        assertEquals(LogEntry.GEAR_RELEASED, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testGearParkAfterDefaults()
+    {
+        // Default setup
+
+        vanDoor.setGear(Gear.PARK); // ACTION
+
+        assertEquals(Gear.PARK, vanDoor.getGear());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testGearParkAfterGearNeutralWithDefaults()
+    {
+        testGearNeutralAfterDefaults();
+
+        vanDoor.setGear(Gear.PARK); // ACTION
+
+        assertEquals(Gear.PARK, vanDoor.getGear());
+        assertEquals(LogEntry.GEAR_PARKED, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testOpenButtonAfterGearNeutralAfterDefaults()
+    {
+        testGearNeutralAfterDefaults();
+
+        vanDoor.pushOpenButton(); // ACTION
+
+        assertFalse(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertEquals(Gear.NEUTRAL, vanDoor.getGear());
+        assertEquals(LogEntry.OPEN_REFUSED_GEAR, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testGearDriveAfterNeutralwithDefaults()
+    {
+        testGearNeutralAfterDefaults();
+
+        vanDoor.setGear(Gear.DRIVE); // ACTION
+
+        assertEquals(Gear.DRIVE, vanDoor.getGear());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testGearParkafterDriveAfterNeutralwithDefaults()
+    {
+        testGearDriveAfterNeutralwithDefaults();
+
+        vanDoor.setGear(Gear.PARK); // ACTION
+
+        assertEquals(Gear.PARK, vanDoor.getGear());
+        assertEquals(LogEntry.GEAR_PARKED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testCloseDoorAfterDefaults()
+    {
+        // Default setup
+
+        vanDoor.closeDoor(); // ACTION
+
+        assertFalse(vanDoor.isOpen());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testCloseDoorAfterCloseDoorwithDefaults()
+    {
+        testCloseDoorAfterDefaults();
+
+        vanDoor.closeDoor(); // ACTION
+
+        assertFalse(vanDoor.isOpen());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testCloseDoorAfterDoorOpen()
+    {
+        testOpenButtonAfterDefaults();
+
+        vanDoor.closeDoor(); // ACTION
+
+        assertFalse(vanDoor.isOpen());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.DOOR_CLOSED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testChildSafeWithDefaults()
+    {
+        // Default setup
+
+        vanDoor.setChildSafe(true); // ACTION
+
+        assertFalse(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.CHILD_SAFE_CHANGE_REFUSED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testChildSafeAfterOpenButton()
+    {
+        testOpenButtonAfterDefaults();
+
+        vanDoor.setChildSafe(true); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertTrue(vanDoor.isChildSafe());
+        assertEquals(LogEntry.CHILD_SAFE_ENGAGED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testCloseDoorAfterChildSafeEngaged()
+    {
+        testChildSafeAfterOpenButton();
+
+        vanDoor.closeDoor();
+
+        assertFalse(vanDoor.isOpen());
+        assertTrue(vanDoor.isChildSafe());
+        assertEquals(LogEntry.DOOR_CLOSED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testPullInsideHandleAfterChildSafeEngaged()
+    {
+        testCloseDoorAfterChildSafeEngaged();
+
+        vanDoor.pullInsideHandle();
+
+        assertFalse(vanDoor.isOpen());
+        assertTrue(vanDoor.isChildSafe());
+        assertEquals(LogEntry.OPEN_REFUSED_CHILD_SAFE, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testChildSafeDisengagedAfterChildSafeEngaged()
+    {
+        testChildSafeAfterOpenButton();
+
+        vanDoor.setChildSafe(false); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.CHILD_SAFE_DISENGAGED, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testChildSafeDisengagedAfterChildSafeDisengaged()
+    {
+        testChildSafeAfterOpenButton();
+
+        vanDoor.setChildSafe(true); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertTrue(vanDoor.isChildSafe());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testChildSafeDisengageAfterEngaged()
+    {
+        testChildSafeWithDefaults();
+
+        vanDoor.setChildSafe(false); // ACTION
+
+        assertFalse(vanDoor.isOpen());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testPullOutsideHandleWithDefaults()
+    {
+        // Default setup
+
+        vanDoor.pullOutsideHandle(); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.DOOR_OPENED, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testChildSafeDisengageAfterPullOutsideHandle()
+    {
+        testPullOutsideHandleWithDefaults();
+
+        vanDoor.setChildSafe(false); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testPushOpenButtonWithOpnUnlCSDRel()
+    {
+        // Unl by default
+        // CSD by default
+        vanDoor.pushOpenButton(); // Opn
+        vanDoor.setGear(Gear.DRIVE); // Rel
+
+        vanDoor.pushOpenButton(); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testPullOutsideWithOpnUnlCSDRel()
+    {
+        // Unl by default
+        // CSD by default
+        vanDoor.pushOpenButton(); // Opn
+        vanDoor.setGear(Gear.DRIVE); // Rel
+
+        vanDoor.pullOutsideHandle(); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testOpenInsideWithOpnUnlCSDRel()
+    {
+        // Unl by default
+        // CSD by default
+        vanDoor.pushOpenButton(); // Opn
+        vanDoor.setGear(Gear.DRIVE); // Rel
+
+        vanDoor.pullInsideHandle(); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testPushOpenButtonWithOpnUnlCSERel()
+    {
+        // Unl by default
+        vanDoor.setChildSafe(true); // CSE
+        vanDoor.pushOpenButton(); // Opn
+        vanDoor.setGear(Gear.NEUTRAL); // Rel
+
+        vanDoor.pushOpenButton(); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testPullOutsideWithOpnUnlCSERel()
+    {
+        // Unl by default
+        vanDoor.setChildSafe(true); // CSE
+        vanDoor.pushOpenButton(); // Opn
+        vanDoor.setGear(Gear.REVERSE); // Rel
+
+        vanDoor.pullOutsideHandle(); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testPushOpenButtonWithOpnLckCSDRel()
+    {
+
+        // CSD by default
+        vanDoor.isLocked(); // Lck
+        vanDoor.pushOpenButton(); // Opn
+        vanDoor.setGear(Gear.DRIVE); // Rel
+
+        vanDoor.pushOpenButton(); // ACTION
+
+        assertTrue(vanDoor.isOpen());
+        assertFalse(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.NO_ACTION_TAKEN, vanDoor.getLastLogEntry());
+    }
+
+
+    @Test
+    public void testPushButtonwithClsLckCSDRel()
+    {
+        // Cls by default
+        // CSD by default
+        vanDoor.pushLockButton(); // Lck
+        vanDoor.setGear(Gear.DRIVE); // Rel
+
+        vanDoor.pushOpenButton(); // ACTION
+
+        assertFalse(vanDoor.isOpen());
+        assertTrue(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.OPEN_REFUSED_LOCK, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testPushButtonwithClsLckCSERel()
+    {
+        // Cls by default
+        vanDoor.setChildSafe(true); // CSE
+        vanDoor.pushLockButton(); // Lck
+        vanDoor.setGear(Gear.DRIVE); // Rel
+
+        vanDoor.pushOpenButton(); // ACTION
+
+        assertFalse(vanDoor.isOpen());
+        assertTrue(vanDoor.isLocked());
+        assertFalse(vanDoor.isChildSafe());
+        assertEquals(LogEntry.OPEN_REFUSED_LOCK, vanDoor.getLastLogEntry());
+
+    }
+
+
+    @Test
+    public void testGetLogEntryAtNegativeOne()
+    {
+        // default setup
+
+        LogEntry entry = vanDoor.getLogEntryAt(-1); // ACTION
+
+        assertNull(entry);
+    }
+    
+    @Test
+    public void testLogEntryAtWithIndexTooLarge()
+    {
+        // default setup (see note below)
+
+        LogEntry entry = vanDoor.getLogEntryAt(vanDoor.getLogEntryCount()); // action
+
+        assertNull(entry);
+    }
+
+}
